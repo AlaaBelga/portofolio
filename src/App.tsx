@@ -411,9 +411,68 @@ export default function App() {
     }
     updateProgress()
     window.addEventListener("scroll", updateProgress, { passive: true })
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches
+    const precisePointer = window.matchMedia("(pointer: fine)").matches
+    const cursor = document.querySelector<HTMLElement>(".motion-cursor")
+    let frame = 0
+    const moveCursor = (event: PointerEvent) => {
+      if (reducedMotion || !precisePointer || !cursor) return
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        cursor.style.setProperty("--cursor-x", `${event.clientX}px`)
+        cursor.style.setProperty("--cursor-y", `${event.clientY}px`)
+      })
+    }
+    const hoverTargets = document.querySelectorAll("a, button, summary")
+    const cursorEnter = () => cursor?.classList.add("is-active")
+    const cursorLeave = () => cursor?.classList.remove("is-active")
+    hoverTargets.forEach((target) => {
+      target.addEventListener("pointerenter", cursorEnter)
+      target.addEventListener("pointerleave", cursorLeave)
+    })
+
+    const cards = document.querySelectorAll<HTMLElement>(".project-card")
+    const tiltHandlers = new Map<HTMLElement, {
+      move: (event: PointerEvent) => void
+      leave: () => void
+    }>()
+    cards.forEach((card) => {
+      const move = (event: PointerEvent) => {
+        if (reducedMotion || !precisePointer) return
+        const rect = card.getBoundingClientRect()
+        const x = (event.clientX - rect.left) / rect.width - 0.5
+        const y = (event.clientY - rect.top) / rect.height - 0.5
+        card.style.setProperty("--tilt-x", `${-y * 4}deg`)
+        card.style.setProperty("--tilt-y", `${x * 5}deg`)
+        card.style.setProperty("--glow-x", `${(x + 0.5) * 100}%`)
+        card.style.setProperty("--glow-y", `${(y + 0.5) * 100}%`)
+      }
+      const leave = () => {
+        card.style.setProperty("--tilt-x", "0deg")
+        card.style.setProperty("--tilt-y", "0deg")
+      }
+      card.addEventListener("pointermove", move)
+      card.addEventListener("pointerleave", leave)
+      tiltHandlers.set(card, { move, leave })
+    })
+
+    window.addEventListener("pointermove", moveCursor, { passive: true })
     return () => {
       observer.disconnect()
       window.removeEventListener("scroll", updateProgress)
+      window.removeEventListener("pointermove", moveCursor)
+      cancelAnimationFrame(frame)
+      hoverTargets.forEach((target) => {
+        target.removeEventListener("pointerenter", cursorEnter)
+        target.removeEventListener("pointerleave", cursorLeave)
+      })
+      tiltHandlers.forEach(({ move, leave }, card) => {
+        card.removeEventListener("pointermove", move)
+        card.removeEventListener("pointerleave", leave)
+      })
     }
   }, [])
 
@@ -460,6 +519,9 @@ export default function App() {
         </i>
         <span className="rail-end">SYSTEM</span>
       </aside>
+      <div className="motion-cursor" aria-hidden="true">
+        <i />
+      </div>
 
       <main>
         <section id="accueil" className="hero">
@@ -471,7 +533,13 @@ export default function App() {
               </p>
             </div>
             <h1>
-              De la donnée à des <em>solutions concrètes.</em>
+              <span className="kinetic-line">
+                <span>De</span> <span>la</span> <span>donnée</span>{" "}
+                <span>à</span> <span>des</span>
+              </span>
+              <em className="kinetic-line">
+                <span>solutions</span> <span>concrètes.</span>
+              </em>
             </h1>
             <div className="hero-bottom">
               <p className="hero-description">
@@ -528,6 +596,26 @@ export default function App() {
             </div>
           </div>
         </section>
+        <div className="signal-marquee" aria-hidden="true">
+          <div>
+            <span>DATA ENGINEERING</span>
+            <i />
+            <span>INTELLIGENCE ARTIFICIELLE</span>
+            <i />
+            <span>SOFTWARE SYSTEMS</span>
+            <i />
+            <span>FROM SIGNAL TO IMPACT</span>
+            <i />
+            <span>DATA ENGINEERING</span>
+            <i />
+            <span>INTELLIGENCE ARTIFICIELLE</span>
+            <i />
+            <span>SOFTWARE SYSTEMS</span>
+            <i />
+            <span>FROM SIGNAL TO IMPACT</span>
+            <i />
+          </div>
+        </div>
 
         <section id="apropos" className="section about-section">
           <SectionHeading number="01" eyebrow="À PROPOS">
