@@ -1,0 +1,12 @@
+{
+  "title": "Alaa Belga | Data & Software Engineering",
+  "description": "Portfolio d'Alaa Belga, élève-ingénieure à l'INSEA. Projets en intelligence artificielle, data engineering, développement logiciel et hackathons.",
+  "language": "fr",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
